@@ -2,19 +2,23 @@
 
 namespace UniCraft.InventoryMechanism
 {
-    public abstract class AInventoryItem : ScriptableObject
+    /// <inheritdoc/>
+    /// <summary>
+    /// Base class to create an inventory item
+    /// </summary>
+    public abstract class AInventoryItem : MonoBehaviour
     {
         ///////////////////////////////
         ////////// Attribute //////////
         ///////////////////////////////
-        
+
         [SerializeField] protected string Name;
         [SerializeField] protected string Description;
-
+        
         //////////////////////////////
         ////////// Property //////////
         //////////////////////////////
-        
+
         public string GetName => Name;
         public string GetDescription => Description;
     }

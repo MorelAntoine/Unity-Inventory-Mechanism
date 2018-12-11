@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace UniCraft.InventoryMechanism
 {
@@ -16,67 +17,137 @@ namespace UniCraft.InventoryMechanism
         ////////// Attribute //////////
         ///////////////////////////////
 
-        [SerializeField] protected List<AInventoryItem> InventoryItems;
+        /////////////////////////////////////
+        ////////// Default Setting //////////
+
+        public const int MinCapacity = 0;
+        public const int MaxCapacity = 999;
+        
+        /////////////////////////////////
+        ////////// Information //////////
+
+        [SerializeField] protected int Capacity;
+        [SerializeField] protected int Size;
+        
+        ///////////////////////////////
+        ////////// Inventory //////////
+
+        [SerializeField] protected List<AInventoryItem> Items;
+
+        /////////////////////////////////
+        ////////// Unity Event //////////
+
+        ////////// Inventory Management //////////
+        
+        [SerializeField] protected UnityEvent OnOpenInventoryEvents = null;
+        [SerializeField] protected UnityEvent OnCloseInventoryEvents = null;
+        [SerializeField] protected UnityEvent OnResizeInventoryEvents = null;
+
+        ////////// Item Management //////////
+
+        [SerializeField] protected UnityEvent OnAddItemEvents = null;
+        [SerializeField] protected UnityEvent OnRemoveItemEvents = null;
+
+        ////////// Sort //////////
+        
+        [SerializeField] protected UnityEvent OnSortItemsEvents = null;
         
         //////////////////////////////
         ////////// Property //////////
         //////////////////////////////
+        
+        /////////////////////////////////
+        ////////// Information //////////
 
-        public IEnumerable<AInventoryItem> GetInventoryItems => InventoryItems;
-        public int GetCapacity => InventoryItems.Capacity;
-        public int GetSize => InventoryItems.Count;
+        public int GetCapacity => Capacity;
+        public int GetSize => Size;
+        
+        ///////////////////////////////
+        ////////// Inventory //////////
 
+        public List<AInventoryItem> GetItems => Items;
+        
         ////////////////////////////
         ////////// Method //////////
         ////////////////////////////
-
+        
         /////////////////////////
         ////////// API //////////
         
-        ////////// Mechanism //////////
+        ////////// Inventory Management //////////
         
-        public virtual bool AddInventoryItem(AInventoryItem inventoryItem)
+        public virtual void OpenInventory()
         {
-            if (InventoryItems.Count >= InventoryItems.Capacity)
+            OnOpenInventoryEvents.Invoke();
+        }
+
+        public virtual void CloseInventory()
+        {
+            OnCloseInventoryEvents.Invoke();
+        }
+
+        public virtual void ResizeInventory(int newCapacity)
+        {
+            Items.Capacity = newCapacity;
+            Capacity = Items.Capacity;
+            Size = Items.Count;
+            OnResizeInventoryEvents.Invoke();
+        }
+        
+        ////////// Item Management //////////
+
+        public virtual bool AddItem(AInventoryItem item)
+        {
+            if ( Size == Capacity )
             {
                 return (false);
             }
-            InventoryItems.Add(inventoryItem);
+            Items.Add(item);
+            OnAddItemEvents.Invoke();
             return (true);
         }
 
-        public virtual bool RemoveInventoryItem(AInventoryItem inventoryItem)
+        public virtual bool RemoveItem(AInventoryItem item)
         {
-            return (InventoryItems.Remove(inventoryItem));
+            if ( !Items.Remove(item) )
+            {
+                return (false);
+            }
+            OnRemoveItemEvents.Invoke();
+            return (true);
         }
-
-        public virtual int ResizeInventory(int newCapacity)
-        {
-            InventoryItems.Capacity = newCapacity;
-            return (InventoryItems.Capacity);
-        }
-
-        ////////// Sort //////////
         
-        public virtual IEnumerable<AInventoryItem> SortInventoryByName(bool bAscending = true)
+        ////////// Research //////////
+
+        public bool Contains(AInventoryItem item)
         {
-            if ( bAscending )
-            {
-                InventoryItems = InventoryItems.OrderBy(item => item.GetName).ToList();
-            }
-            else
-            {
-                InventoryItems = InventoryItems.OrderByDescending(item => item.GetName).ToList();
-            }
-            return (InventoryItems);
+            return (Items.Contains(item));
+        }
+        
+        public AInventoryItem FindItemByName(string itemName)
+        {
+            return (Items.Find(item => item.GetName == itemName));
+        }
+
+        public List<AInventoryItem> FindAllItemByName(string itemName)
+        {
+            return (Items.FindAll(item => item.GetName == itemName));
+        }
+        
+        ////////// Sort //////////
+
+        public void SortItemsByName(bool bAscending = true)
+        {
+            Items = (bAscending ? Items.OrderBy(i => i.GetName) : Items.OrderByDescending(i => i.GetName)).ToList();
+            OnSortItemsEvents.Invoke();
         }
         
         ////////////////////////////////////////////
-        ////////// MonoBehaviour callback //////////
+        ////////// MonoBehaviour Callback //////////
 
         protected virtual void Awake()
         {
-            // instantiate ScriptableObject
+            Items.Capacity = Capacity;
         }
     }
 }
